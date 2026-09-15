@@ -12,7 +12,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.5.1"
+ns.VERSION = "0.5.2"
 ns.GOLD = "|cffc9a63c"
 ns.CYAN = "|cff00afd7"
 function ns.msg(text) print(ns.GOLD .. "Rebuffed|r: " .. text) end
@@ -85,7 +85,7 @@ SlashCmdList.REBUFFED = function(arg)
     local sess = ns.Recorder.active()
     local aclOn, combatOn = ns.Logging.state()
     if sess then
-      ns.msg(("|cff46b36b● recording|r · %s (%s) · session %s · %d landmarks · logging acl=%s combat=%s")
+      ns.msg(("|cff46b36brecording|r · %s (%s) · session %s · %d landmarks · logging acl=%s combat=%s")
         :format(sess.instance.name or "?", sess.kind or "?", sess.id, #sess.segments,
                 aclOn and "|cff46b36bon|r" or "|cffe25a5aOFF|r",
                 combatOn and "|cff46b36bon|r" or "|cffe25a5aOFF|r"))

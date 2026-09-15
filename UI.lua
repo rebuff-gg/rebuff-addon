@@ -222,7 +222,7 @@ function UI.refreshStatus()
   if sess then
     local aclOn, combatOn = ns.Logging.state()
     local ok = aclOn and combatOn
-    frame.recFS:SetText((ok and "|cff47c97e● recording|r " or "|cffe5544b● logging OFF|r ")
+    frame.recFS:SetText((ok and "|cff47c97erecording|r " or "|cffe5544blogging OFF|r ")
       .. (ns.CYAN .. (sess.instance.name or "?") .. "|r"))
   else
     frame.recFS:SetText("|cff8a96a6idle — not in an instance|r")

@@ -16,11 +16,11 @@ local function refresh()
   local aclOn, combatOn = ns.Logging.state()
 
   if sess then
-    bigFS:SetText("|cff47c97e● Recording — everything|r")
+    bigFS:SetText("|cff47c97eRecording — everything|r")
   elseif IsInInstance() then
-    bigFS:SetText("|cffc9a63c● In instance — starting…|r")
+    bigFS:SetText("|cffc9a63cIn instance — starting…|r")
   else
-    bigFS:SetText("|cff8a96a6● Idle — auto-starts in any raid or dungeon|r")
+    bigFS:SetText("|cff8a96a6Idle — auto-starts in any raid or dungeon|r")
   end
 
   aclFS:SetText(("Advanced combat logging: %s"):format(

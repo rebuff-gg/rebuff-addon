@@ -101,8 +101,49 @@ end
 -- How many times we've had to turn combat logging back on after startup (exposed for the UI).
 L.repairs = 0
 
+-- ── anti-tamper: catch (and name) any addon that disables our logging ──────────────────────────
+-- We post-hook the global toggles. If anything turns combat logging OFF or clears the cvar, our hook
+-- fires the instant it happens: we turn it straight back on and blame the addon whose file is on the
+-- call stack. `reentrant` stops our own re-enable from looking like tampering.
+local reentrant = false
+
+local function culpritFromStack()
+  local s = debugstack and debugstack(1, 20, 0) or ""
+  for name in s:gmatch("[Aa]dd[Oo]ns[\\/]([^\\/]+)") do
+    if name ~= ADDON and name ~= "Rebuffed" then return name end
+  end
+  return nil -- Blizzard code / a /combatlog macro leaves no AddOns path
+end
+
+local function onTamper(what)
+  if reentrant then return end
+  local culprit = culpritFromStack()
+  reentrant = true
+  L.enforce() -- turn it straight back on
+  reentrant = false
+  L.repairs = (L.repairs or 0) + 1
+  L.lastCulprit = culprit
+  local who = culprit and ("|cffff4444" .. culprit .. "|r") or "another addon or a macro"
+  ns.msg(("|cffe5544bBlocked " .. who .. "|r from disabling %s — recording re-enabled. If that wasn't you, that addon is sabotaging your logs; consider removing it."):format(what))
+  bigWarn("Rebuffed: blocked an addon from stopping your combat log")
+end
+
+function L.installTamperGuards()
+  if L._tamperHooked or not hooksecurefunc then return end
+  L._tamperHooked = true
+  hooksecurefunc("LoggingCombat", function(state)
+    if not reentrant and (state == false or state == nil) then onTamper("combat logging") end
+  end)
+  hooksecurefunc("SetCVar", function(cvar, value)
+    if not reentrant and cvar == "advancedCombatLogging" and tostring(value) == "0" then
+      onTamper("advanced combat logging")
+    end
+  end)
+end
+
 function L.startGuardian()
   if L._guardian then return end
+  L.installTamperGuards()
   local started = false
   local function tick()
     local acl, combat, changed = L.enforce()

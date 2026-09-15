@@ -12,7 +12,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.6.0"
+ns.VERSION = "0.6.1"
 ns.GOLD = "|cffc9a63c"
 ns.CYAN = "|cff00afd7"
 function ns.msg(text) print(ns.GOLD .. "Rebuffed|r: " .. text) end

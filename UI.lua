@@ -1,7 +1,8 @@
 -- Rebuffed · UI.lua — the in-game panel: window frame, tab strip, shared widgets, theme.
 --
 -- Theme mirrors the web console (rebuff.gg / localhost:8080): dark panels, gold + cyan accents.
--- Tabs register themselves (Runs, Loot, Readiness, Status) and are built lazily on first open.
+-- Tabs register themselves and are built lazily on first open. Today that's just Recording (the
+-- always-on logging status); the raid-lead tabs (Runs/Loot/Readiness) are deferred — see future/.
 
 local ADDON, ns = ...
 local UI = {}
@@ -247,7 +248,7 @@ function UI.Toggle()
   if frame:IsShown() then frame:Hide() else UI.Open() end
 end
 
--- Broadcast roster changes to any tab that cares (Readiness/Runs refresh if visible).
+-- Broadcast roster changes to any tab that cares (kept for the deferred raid-lead tabs in future/).
 function UI.onRosterUpdate()
   for _, t in ipairs(tabs) do
     if t.content and t.content:IsShown() and t.onRoster then pcall(t.onRoster) end

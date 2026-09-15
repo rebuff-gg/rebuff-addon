@@ -12,7 +12,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.5.2"
+ns.VERSION = "0.6.0"
 ns.GOLD = "|cffc9a63c"
 ns.CYAN = "|cff00afd7"
 function ns.msg(text) print(ns.GOLD .. "Rebuffed|r: " .. text) end
@@ -25,45 +25,20 @@ local f = CreateFrame("Frame")
 -- Raid/dungeon → a full "instance" session (encounters, challenge mode, combat edges, meter).
 -- Everywhere else → a lightweight "world" session for leveling (level-ups, deaths, zone changes).
 -- We transition between them so exactly one session is active at a time.
+-- One session per play session (login → logout). The combat log delimits fights, so we don't churn
+-- sessions on zoning — the addon record is a thin identity/leveling/integrity beacon.
 local function checkContext()
-  local inInst, itype = IsInInstance()
-  local wantInstance = inInst and (itype == "raid" or itype == "party")
-  local sess = ns.Recorder.active()
-  if wantInstance then
-    if sess and sess.kind ~= "instance" then ns.Recorder.stop("entered instance"); sess = nil end
-    if not sess then ns.Recorder.start("instance") end
-  else
-    if sess and sess.kind == "instance" then ns.Recorder.stop("left instance"); sess = nil end
-    if not sess then ns.Recorder.start("world") end
-  end
+  if not ns.Recorder.active() then ns.Recorder.start() end
 end
 ns.checkContext = checkContext
 ns.checkInstance = checkContext -- back-compat alias
 
--- ── event router (landmarks only — never CLEU) ────────────────────────────────
+-- ── event router (minimal — the combat-log FILE is the real record) ───────────
 local handlers = {
-  ENCOUNTER_START = function(id, name, diff, size) ns.Recorder.onEncounterStart(id, name, diff, size) end,
-  ENCOUNTER_END   = function(id, name, diff, size, success) ns.Recorder.onEncounterEnd(id, name, diff, size, success) end,
-  PLAYER_REGEN_DISABLED = function() ns.Logging.enforce(); if ns.Recorder.active() then ns.Recorder.onCombatStart() end end,
-  PLAYER_REGEN_ENABLED  = function() if ns.Recorder.active() then ns.Recorder.onCombatEnd() end end,
+  -- Re-assert logging the instant combat starts (the one moment it must be on), then the file does
+  -- the rest. We do NOT record encounters/zones/deaths/meters here — those are all in the log.
+  PLAYER_REGEN_DISABLED = function() ns.Logging.enforce() end,
   PLAYER_LEVEL_UP = function(level) ns.Recorder.onLevelUp(level) end,
-  PLAYER_DEAD     = function() ns.Recorder.onDeath() end,
-  CHALLENGE_MODE_START = function()
-    if not ns.Recorder.active() then return end
-    local name = GetInstanceInfo()
-    local instID = select(8, GetInstanceInfo())
-    local cmID, level, affixes
-    pcall(function()
-      cmID = C_ChallengeMode.GetActiveChallengeMapID()
-      level, affixes = C_ChallengeMode.GetActiveKeystoneInfo()
-    end)
-    ns.Recorder.onChallengeStart(name, instID, cmID, level, affixes)
-  end,
-  CHALLENGE_MODE_END = function()
-    if not ns.Recorder.active() then return end
-    local instID = select(8, GetInstanceInfo())
-    ns.Recorder.onChallengeEnd(instID, true, nil, nil)
-  end,
 }
 
 -- ── slash ─────────────────────────────────────────────────────────────────────
@@ -85,8 +60,8 @@ SlashCmdList.REBUFFED = function(arg)
     local sess = ns.Recorder.active()
     local aclOn, combatOn = ns.Logging.state()
     if sess then
-      ns.msg(("|cff46b36brecording|r · %s (%s) · session %s · %d landmarks · logging acl=%s combat=%s")
-        :format(sess.instance.name or "?", sess.kind or "?", sess.id, #sess.segments,
+      ns.msg(("|cff46b36brecording|r · %s · session %s · %d markers · logging acl=%s combat=%s")
+        :format(sess.context or "?", sess.id, #sess.segments,
                 aclOn and "|cff46b36bon|r" or "|cffe25a5aOFF|r",
                 combatOn and "|cff46b36bon|r" or "|cffe25a5aOFF|r"))
     else
@@ -139,10 +114,7 @@ f:SetScript("OnEvent", function(_, event, ...)
     checkContext()
   elseif event == "ZONE_CHANGED_NEW_AREA" then
     ns.Logging.enforce() -- zoning can drop combat logging; re-assert immediately
-    ns.Recorder.onZone()
     checkContext()
-  elseif event == "GROUP_ROSTER_UPDATE" then
-    if ns.UI then ns.UI.onRosterUpdate() end
   elseif event == "PLAYER_LOGOUT" then
     if ns.Recorder.active() then ns.Recorder.stop("logout") end
   elseif handlers[event] then
@@ -150,16 +122,10 @@ f:SetScript("OnEvent", function(_, event, ...)
   end
 end)
 
--- Register events. Midnight-only events (Mythic+ challenge mode) are only registered where they
--- exist — RegisterEvent on an unknown event errors on Classic.
+-- Minimal event set: boot, session lifecycle, logging re-assert on combat start, and level-ups.
+-- Everything else (fights, deaths, encounters, zones, meters) lives in the combat-log file.
 local events = {
   "ADDON_LOADED", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA", "PLAYER_LOGOUT",
-  "GROUP_ROSTER_UPDATE",
-  "ENCOUNTER_START", "ENCOUNTER_END", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED",
-  "PLAYER_LEVEL_UP", "PLAYER_DEAD",
+  "PLAYER_REGEN_DISABLED", "PLAYER_LEVEL_UP",
 }
-if ns.hasChallengeMode then
-  events[#events + 1] = "CHALLENGE_MODE_START"
-  events[#events + 1] = "CHALLENGE_MODE_END"
-end
 for _, ev in ipairs(events) do f:RegisterEvent(ev) end

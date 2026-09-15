@@ -30,8 +30,8 @@ local function refresh()
     (ns.Logging.repairs and ns.Logging.repairs > 0) and (" |cff8a96a6· kept on " .. ns.Logging.repairs .. "×|r") or ""))
 
   if sess then
-    sessFS:SetText(("Current session: |cff00afd7%s|r · %s · %d landmarks")
-      :format(sess.instance.name or "?", sess.id, #sess.segments))
+    sessFS:SetText(("Current session: |cff00afd7%s|r · %s · %d markers")
+      :format(sess.context or "?", sess.id, #sess.segments))
   else
     sessFS:SetText("Current session: |cff8a96a6none|r")
   end

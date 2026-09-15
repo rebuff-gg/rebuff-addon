@@ -54,7 +54,7 @@ function D.snapshot()
     build = select(4, GetBuildInfo()),
     logging = { acl = aclOn, combat = combatOn },
     inInstance = (select(1, IsInInstance())) and (select(2, IsInInstance())) or "no",
-    session = sess and { id = sess.id, instance = sess.instance.name, landmarks = #sess.segments } or nil,
+    session = sess and { id = sess.id, context = sess.context, markers = #sess.segments } or nil,
     storedSessions = nsess,
     reserves = { items = resItems, players = np, raid = ns.DB.loot.raidCode },
     fakeGroup = D.active(),

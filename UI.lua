@@ -158,7 +158,7 @@ local function buildFrame()
   bar:SetPoint("TOPLEFT", 1, -1); bar:SetPoint("TOPRIGHT", -1, -1); bar:SetHeight(38)
   local brand = UI.FS(bar, "GameFontNormalLarge")
   brand:SetPoint("LEFT", 14, 0)
-  brand:SetText(ns.GOLD .. "Rebuffed|r  " .. ns.CYAN .. "·|r  raid ops")
+  brand:SetText(ns.GOLD .. "Rebuffed|r  " .. ns.CYAN .. "·|r  always-on recording")
   local ver = UI.FS(bar, "GameFontDisableSmall", C.dim)
   ver:SetPoint("LEFT", brand, "RIGHT", 8, -1); ver:SetText("v" .. ns.VERSION)
 

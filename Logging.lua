@@ -33,26 +33,35 @@ local function setACL(on)
   return ok
 end
 
--- Current on-disk logging posture as the engine sees it (source of truth, not our intent).
+-- CRITICAL: never call LoggingCombat() with NO argument. On the Classic/SoD client a nil/absent arg
+-- is treated as false, so *querying* combat logging actually DISABLES it — which caused a vicious
+-- ON→OFF cycle (every status read turned it off; the guardian turned it back on). We only ever call
+-- LoggingCombat(true)/(false) explicitly and track our own intent in L._combat.
+L._combat = false
+
+-- Current logging posture. ACL is a real cvar we can query safely; combat logging is our tracked
+-- intent (there is no side-effect-free way to query it).
 function L.state()
   local aclOn = GetCVar("advancedCombatLogging") == "1"
-  local combatOn = LoggingCombat() and true or false -- no-arg form queries current state
-  return aclOn, combatOn
+  return aclOn, L._combat
 end
 
 -- Force logging ON; report whether we had to change anything.
--- Returns: aclOn, combatOn, changed (all reflect the state AFTER enforcement).
 function L.enforce()
-  local aclOn, combatOn = L.state()
+  local aclOn = GetCVar("advancedCombatLogging") == "1"
   local changed = false
-  if not aclOn then changed = setACL(true) or changed end
-  if not combatOn then LoggingCombat(true); changed = true end
-  aclOn, combatOn = L.state()
-  return aclOn, combatOn, changed
+  if not aclOn then
+    changed = setACL(true) or changed
+    aclOn = GetCVar("advancedCombatLogging") == "1"
+  end
+  LoggingCombat(true) -- idempotent enable; safe when already on, and (unlike the no-arg form) never disables
+  if not L._combat then changed = true end
+  L._combat = true
+  return aclOn, L._combat, changed
 end
 
 -- Provided for completeness, but the addon never calls this: logging is always-on by design.
-function L.stop() LoggingCombat(false) end
+function L.stop() LoggingCombat(false); L._combat = false end
 
 -- Compact snapshot for the session record / status line.
 function L.snapshot()
@@ -81,8 +90,8 @@ function L.nag(force)
   local now = GetTime()
   if not force and (now - lastNag) < NAG_PERIOD then return end
   lastNag = now
-  local msg = "COMBAT LOGGING IS OFF — your gameplay is NOT being recorded."
-  ns.msg("|cffe5544b" .. msg .. "|r  Rebuffed needs |cffffffffAdvanced Combat Logging|r on — re-enabling it now. If this keeps happening, another addon or a macro is turning it off.")
+  local msg = "ADVANCED COMBAT LOGGING is off and couldn't be enabled."
+  ns.msg("|cffe5544b" .. msg .. "|r  Rebuffed needs the |cffffffffadvancedCombatLogging|r CVar on. If this keeps happening, a script or another addon is resetting it.")
   bigWarn("Rebuffed: " .. msg)
 end
 
@@ -116,5 +125,5 @@ function L.startGuardian()
   tick() -- enforce immediately on first world-enter
   -- Re-enforce every 3s: WoW (or another addon) can drop combat logging; a fast poll keeps any gap
   -- tiny instead of the ~10s flicker the old interval caused. Nagging self-throttles (NAG_PERIOD).
-  L._guardian = C_Timer.NewTicker(3, tick)
+  L._guardian = C_Timer.NewTicker(10, tick)
 end

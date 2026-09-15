@@ -1,3 +1,4 @@
+-- DEFERRED — raid-lead tool. NOT loaded yet (removed from the .toc). Needs to be implemented/finished in a future release; see addon/Rebuffed/future/.
 -- Rebuffed · Loot.lua — soft-reserve loot distribution (raid-lead tool).
 --
 -- ⏸ PHASE 2 (deferred, 2026-09-13): raid-org / soft-reserve loot is parked while the MVP focuses on

@@ -25,8 +25,9 @@ local function refresh()
 
   aclFS:SetText(("Advanced combat logging: %s"):format(
     aclOn and "|cff47c97eON|r" or "|cffe5544bOFF|r"))
-  combatFS:SetText(("Combat logging to file: %s"):format(
-    combatOn and "|cff47c97eON|r" or "|cffe5544bOFF|r"))
+  combatFS:SetText(("Combat logging to file: %s%s"):format(
+    combatOn and "|cff47c97eON|r" or "|cffe6a93cre-enabling…|r",
+    (ns.Logging.repairs and ns.Logging.repairs > 0) and (" |cff8a96a6· kept on " .. ns.Logging.repairs .. "×|r") or ""))
 
   if sess then
     sessFS:SetText(("Current session: |cff00afd7%s|r · %s · %d landmarks")

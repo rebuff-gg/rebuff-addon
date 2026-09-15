@@ -1,3 +1,4 @@
+-- DEFERRED — raid-lead tool. NOT loaded yet (removed from the .toc). Needs to be implemented/finished in a future release; see addon/Rebuffed/future/.
 -- Rebuffed · Readiness.lua — pre-pull consumables / buffs preview for the party or raid.
 --
 -- Secret Values note: unit auras are only secret *during* an encounter. This screen is a pre-pull

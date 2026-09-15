@@ -19,7 +19,7 @@ Then `/reload` (or restart). Open the panel with `/rb`.
 
 ## Slash commands
 
-`/rb` open · `/rb status` · `/rb addons` · `/rb debug` · `/rb export`
+`/rb` open · `/rb status` · `/rb debug` · `/rb export`  (raid-lead loot/roster tools are deferred — see `future/`)
 
 ## License
 

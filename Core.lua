@@ -12,7 +12,7 @@
 
 local ADDON, ns = ...
 
-ns.VERSION = "0.4.0"
+ns.VERSION = "0.5.0"
 ns.GOLD = "|cffc9a63c"
 ns.CYAN = "|cff00afd7"
 function ns.msg(text) print(ns.GOLD .. "Rebuffed|r: " .. text) end
@@ -44,7 +44,7 @@ ns.checkInstance = checkContext -- back-compat alias
 local handlers = {
   ENCOUNTER_START = function(id, name, diff, size) ns.Recorder.onEncounterStart(id, name, diff, size) end,
   ENCOUNTER_END   = function(id, name, diff, size, success) ns.Recorder.onEncounterEnd(id, name, diff, size, success) end,
-  PLAYER_REGEN_DISABLED = function() if ns.Recorder.active() then ns.Recorder.onCombatStart() end end,
+  PLAYER_REGEN_DISABLED = function() ns.Logging.enforce(); if ns.Recorder.active() then ns.Recorder.onCombatStart() end end,
   PLAYER_REGEN_ENABLED  = function() if ns.Recorder.active() then ns.Recorder.onCombatEnd() end end,
   PLAYER_LEVEL_UP = function(level) ns.Recorder.onLevelUp(level) end,
   PLAYER_DEAD     = function() ns.Recorder.onDeath() end,
@@ -73,14 +73,9 @@ SlashCmdList.REBUFFED = function(arg)
   arg = (arg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
   if arg == "" or arg == "show" or arg == "open" then
     if ns.UI then ns.UI.Toggle() else ns.msg("UI not loaded") end
-  elseif arg == "runs" or arg == "crew" then
-    if ns.UI then ns.UI.Open("Crew") end
   elseif arg == "rec" or arg == "recording" then
     if ns.UI then ns.UI.Open("Recording") end
-  elseif arg == "loot" then
-    if ns.UI then ns.UI.Open("Loot") end
-  elseif arg == "ready" or arg == "readiness" then
-    if ns.UI then ns.UI.Open("Readiness") end
+  -- NOTE: /rb loot · /rb ready · /rb crew (raid-lead tools) are DEFERRED — see addon/Rebuffed/future/.
   elseif arg == "export" or arg == "end" then
     if ns.Recorder.active() then
       ns.Recorder.stop("manual export")
@@ -108,7 +103,7 @@ SlashCmdList.REBUFFED = function(arg)
     ns.DB.sessions = {}; ns.DB.active = nil
     ns.msg("stored sessions wiped")
   else
-    ns.msg("commands: /rb (open) · /rb loot · /rb ready · /rb crew · /rb status · /rb debug [group] · /rb export · /rb wipe")
+    ns.msg("commands: /rb (open) · /rb status · /rb debug · /rb export · /rb wipe")
   end
 end
 
@@ -143,6 +138,7 @@ f:SetScript("OnEvent", function(_, event, ...)
     end
     checkContext()
   elseif event == "ZONE_CHANGED_NEW_AREA" then
+    ns.Logging.enforce() -- zoning can drop combat logging; re-assert immediately
     ns.Recorder.onZone()
     checkContext()
   elseif event == "GROUP_ROSTER_UPDATE" then

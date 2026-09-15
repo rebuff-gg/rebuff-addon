@@ -2,7 +2,7 @@
 ## Title: Rebuffed
 ## Notes: Always-on advanced combat logging + a fight/leveling landmark index for rebuff.gg
 ## Author: Rebuff.gg
-## Version: 0.4.0
+## Version: 0.5.0
 ## SavedVariables: RebuffedDB
 ## X-Website: https://rebuff.gg
 ## X-Category: Combat
@@ -15,7 +15,6 @@ Segments.lua
 UI.lua
 Debug.lua
 Recording.lua
-Runs.lua
-Loot.lua
-Readiness.lua
+# Raid-lead tools (Runs/Loot/Readiness) are DEFERRED — moved to future/, not loaded yet.
+# To be implemented in a future release; re-list them here when ready.
 Core.lua

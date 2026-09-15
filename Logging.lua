@@ -89,8 +89,12 @@ end
 -- The guardian runs for the WHOLE play session (not just in instances). It enforces logging every
 -- NAG_PERIOD seconds, nags heavily while off, confirms once when it comes back, and records a
 -- LOGGING_REPAIR landmark (via the recorder) whenever it had to fix a mid-session drop.
+-- How many times we've had to turn combat logging back on after startup (exposed for the UI).
+L.repairs = 0
+
 function L.startGuardian()
   if L._guardian then return end
+  local started = false
   local function tick()
     local acl, combat, changed = L.enforce()
     local off = not (acl and combat)
@@ -101,11 +105,16 @@ function L.startGuardian()
       wasOff = false
       ns.msg("|cff47c97ecombat logging is back ON|r — recording resumed.")
     end
-    -- `changed` on the very first tick is initial setup (no session yet) → noteLoggingRepair no-ops.
-    if changed and ns.Recorder and ns.Recorder.noteLoggingRepair then
-      ns.Recorder.noteLoggingRepair(acl, combat)
+    -- A change after startup means something dropped logging and we corrected it — count it + mark
+    -- the gap in the landmark index (the first tick is initial setup, not a repair).
+    if changed and started then
+      L.repairs = L.repairs + 1
+      if ns.Recorder and ns.Recorder.noteLoggingRepair then ns.Recorder.noteLoggingRepair(acl, combat) end
     end
+    started = true
   end
   tick() -- enforce immediately on first world-enter
-  L._guardian = C_Timer.NewTicker(NAG_PERIOD, tick)
+  -- Re-enforce every 3s: WoW (or another addon) can drop combat logging; a fast poll keeps any gap
+  -- tiny instead of the ~10s flicker the old interval caused. Nagging self-throttles (NAG_PERIOD).
+  L._guardian = C_Timer.NewTicker(3, tick)
 end

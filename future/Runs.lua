@@ -1,3 +1,4 @@
+-- DEFERRED — raid-lead tool. NOT loaded yet (removed from the .toc). Needs to be implemented/finished in a future release; see addon/Rebuffed/future/.
 -- Rebuffed · Runs.lua — plan party/raid runs and keep the crew ("Crew" tab).
 --
 -- ⏸ PHASE 2 (deferred, 2026-09-13): raid-org feature, parked behind the Leveling+Dungeons MVP.
